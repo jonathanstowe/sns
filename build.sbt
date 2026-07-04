@@ -29,6 +29,7 @@ libraryDependencies ++= {
     "org.apache.pekko" %% "pekko-http-spray-json" % pekkoHttpVersion,
     "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
     "ch.qos.logback" % "logback-classic" % "1.3.15",
+    "net.logstash.logback"    %  "logstash-logback-encoder"  % "7.4",
     "com.amazonaws" % "aws-java-sdk-sqs" % "1.12.797",
     ("org.apache.camel" % "camel-aws" % "2.25.4").excludeAll(ExclusionRule(organization = "com.amazonaws")),
     "org.apache.camel" % "camel-http" % camelVersion,
