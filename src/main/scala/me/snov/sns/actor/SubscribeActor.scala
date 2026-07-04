@@ -1,13 +1,11 @@
 package me.snov.sns.actor
 
-import java.util.UUID
-
-import akka.actor.Status.{Failure, Success}
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import me.snov.sns.actor.DbActor.CmdGetConfiguration
 import me.snov.sns.model._
-import akka.actor.PoisonPill
-import akka.actor.Status
+import org.apache.pekko.actor.Status.{Failure, Success}
+import org.apache.pekko.actor.{Actor, ActorLogging, ActorRef, Props, Status}
+
+import java.util.UUID
 
 object SubscribeActor {
   def props(dbActor: ActorRef) = Props(classOf[SubscribeActor], dbActor)
@@ -39,23 +37,28 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
   type TopicArn = String
   type SubscriptionArn = String
 
-  var topics = Map[TopicArn, Topic]()
-  var subscriptions = Map[TopicArn, List[Subscription]]()
-  var actorPool = Map[SubscriptionArn, ActorRef]()
+  var topics: Map[TopicArn, Topic] = Map[TopicArn, Topic]()
+  var subscriptions: Map[TopicArn, List[Subscription]] = Map[TopicArn, List[Subscription]]()
+  var actorPool: Map[SubscriptionArn, ActorRef] = Map[SubscriptionArn, ActorRef]()
 
   dbActor ! CmdGetConfiguration
 
   private def fanOut(topicArn: TopicArn, message: Message) = {
     try {
-      if (topics.isDefinedAt(topicArn) && subscriptions.isDefinedAt(topicArn)) {
-        subscriptions(topicArn).foreach((s: Subscription) => {
-          if (actorPool.isDefinedAt(s.arn)) {
-            log.debug(s"Sending message ${message.uuid} to ${s.endpoint}")
-             actorPool(s.arn) ! message
-          } else {
-            throw new RuntimeException(s"No actor for subscription ${s.endpoint}")
-          }
-        })
+      if (topics.isDefinedAt(topicArn) )  {
+        if ( subscriptions.isDefinedAt(topicArn)) {
+          subscriptions(topicArn).foreach((s: Subscription) => {
+            if (actorPool.isDefinedAt(s.arn)) {
+              log.debug(s"Sending message ${message.uuid} to ${s.endpoint}")
+              actorPool(s.arn) ! message
+            } else {
+              throw new RuntimeException(s"No actor for subscription ${s.endpoint}")
+            }
+          })
+        }
+        else {
+          log.debug(s"No subscriptions for $topicArn ")
+        }
       } else {
         throw new TopicNotFoundException(s"Topic not found: $topicArn")
       }
@@ -70,7 +73,7 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
     subscriptions.values.flatten.find{_.arn == subscriptionArn}
   }
 
-  def producerFor(subscription: Subscription) = {
+  def producerFor(subscription: Subscription): ActorRef = {
     val producer = if(subscription.isRawMessageDelivery) {
       context.system.actorOf(RawProducerActor.props(subscription.endpoint, subscription.arn, subscription.topicArn))
     } else {
@@ -78,7 +81,7 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
     }
     producer
   }
-  def updateSubscription(subscription: Subscription) = {
+  def updateSubscription(subscription: Subscription): Unit = {
     val updatedSubs = subscription :: subscriptions(subscription.topicArn).filter(_.arn != subscription.arn)
     subscriptions += (subscription.topicArn -> updatedSubs)
 
@@ -88,14 +91,14 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
     actorPool += (subscription.arn -> producer)
   }
 
-  def setAttribute(subscriptionArn: String, attributeName: String, attributeValue: String) = {
-    log.info(s"Setting ${attributeName} to ${attributeValue} for ${subscriptionArn}")
+  def setAttribute(subscriptionArn: String, attributeName: String, attributeValue: String): Object = {
+    log.info(s"Setting $attributeName to $attributeValue for $subscriptionArn")
     findSubscription(subscriptionArn).map { sub =>
       val updated = sub.copy(subscriptionAttributes = Some(sub.subscriptionAttributes.getOrElse(Map.empty[String,String]) + (attributeName -> attributeValue)))
       updateSubscription(updated)
       Success
     } getOrElse {
-      log.error(s"No subscription found for ${subscriptionArn}")
+      log.error(s"No subscription found for $subscriptionArn")
        Failure(new Exception("Not Found"))
     }
   }
@@ -112,7 +115,7 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
   }
 
   def subscribe(topicArn: TopicArn, protocol: String, endpoint: String): Subscription = {
-    val subscription = Subscription(s"${topicArn}:${UUID.randomUUID}", "", topicArn, protocol, endpoint)
+    val subscription = Subscription(s"$topicArn:${UUID.randomUUID}", "", topicArn, protocol, endpoint)
     initSubscription(subscription)
     
     save()
@@ -120,7 +123,7 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
     subscription
   }
 
-  def initSubscription(subscription: Subscription) = {
+  def initSubscription(subscription: Subscription): Unit = {
     val producer = producerFor(subscription)
     val listByTopic = subscription :: subscriptions.getOrElse(subscription.topicArn, List())
 
@@ -128,11 +131,9 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
     subscriptions += (subscription.topicArn -> listByTopic)
   }
 
-  def unsubscribe(subscriptionArn: String) = {
-    subscriptions = subscriptions.map { case (key, topicSubscriptions) => (key, topicSubscriptions.filter((s: Subscription) => s.arn != subscriptionArn)) }.toMap
-
+  def unsubscribe(subscriptionArn: String): Status.Success.type = {
+    subscriptions = subscriptions.map { case (key, topicSubscriptions) => (key, topicSubscriptions.filter((s: Subscription) => s.arn != subscriptionArn)) }
     save()
-
     Success
   }
 
@@ -157,7 +158,7 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
     }
   }
 
-  def delete(arn: TopicArn) = {
+  def delete(arn: TopicArn): Throwable => Status.Status = {
     if (topics.isDefinedAt(arn)) {
       topics -= arn
       
@@ -174,27 +175,35 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
   }
 
 
-  def load(configuration: Configuration) = {
+  def load(configuration: Configuration): Unit = {
     configuration.topics.foreach { topic => topics += (topic.arn -> topic) }
     configuration.subscriptions.foreach { initSubscription }
     log.info("Loaded configuration")
   }
   
-  def save() = {
+  def save(): Unit = {
     dbActor ! new Configuration(subscriptions = listSubscriptions(), topics = topics.values.toList)
   }
 
-  override def receive = {
-    case CmdCreateTopic(name) => sender ! findOrCreateTopic(name)
-    case CmdDeleteTopic(arn) => sender ! delete(arn)
-    case CmdListTopics => sender ! topics.values
-    case CmdSubscribe(topicArn, protocol, endpoint) => sender ! subscribe(topicArn, protocol, endpoint)
-    case CmdUnsubscribe(subscriptionArn) => sender ! unsubscribe(subscriptionArn)
-    case CmdListSubscriptionsByTopic(topicArn) => sender ! listSubscriptionsByTopic(topicArn)
-    case CmdListSubscriptions() => sender ! listSubscriptions()
-    case CmdFanOut(topicArn, message) => sender ! fanOut(topicArn, message)
-    case CmdSetSubscriptionAttributes(subscriptionArn, attributeName, attributeValue) => sender ! setAttribute(subscriptionArn, attributeName, attributeValue)
-    case CmdGetSubscriptionAttributes(subscriptionArn) => sender ! getAttributes(subscriptionArn)
+  override def receive: Receive = {
+    case CmdCreateTopic(name) =>
+      log.debug(s"SubscribeActor: received CmdCreateTopic($name) from ${sender()}")
+      val topic = findOrCreateTopic(name)
+      log.debug(s"SubscribeActor: replying with topic ${topic.arn}")
+      sender() ! topic
+    case CmdDeleteTopic(arn) =>
+      log.debug(s"SubscribeActor: received CmdDeleteTopic($arn) from ${sender()}")
+      val res = delete(arn)
+      log.debug(s"SubscribeActor: delete result $res")
+      sender() ! res
+    case CmdListTopics => sender() ! topics.values
+    case CmdSubscribe(topicArn, protocol, endpoint) => sender() ! subscribe(topicArn, protocol, endpoint)
+    case CmdUnsubscribe(subscriptionArn) => sender() ! unsubscribe(subscriptionArn)
+    case CmdListSubscriptionsByTopic(topicArn) => sender() ! listSubscriptionsByTopic(topicArn)
+    case CmdListSubscriptions() => sender() ! listSubscriptions()
+    case CmdFanOut(topicArn, message) => sender() ! fanOut(topicArn, message)
+    case CmdSetSubscriptionAttributes(subscriptionArn, attributeName, attributeValue) => sender() ! setAttribute(subscriptionArn, attributeName, attributeValue)
+    case CmdGetSubscriptionAttributes(subscriptionArn) => sender() ! getAttributes(subscriptionArn)
     case configuration: Configuration => load(configuration)
   }
 }

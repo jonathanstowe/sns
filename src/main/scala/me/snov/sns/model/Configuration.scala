@@ -10,5 +10,5 @@ case class Configuration(
                         )
 
 object Configuration extends DefaultJsonProtocol {
-  implicit val format = jsonFormat4(Configuration.apply)
+  implicit val format: RootJsonFormat[Configuration] = jsonFormat4(Configuration.apply)
 }

@@ -1,18 +1,22 @@
 package me.snov.sns.api
 
-import akka.actor.ActorRef
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
-import akka.pattern.ask
-import akka.util.Timeout
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server.Route
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.util.Timeout
 import me.snov.sns.actor.HomeActor.CmdHello
 
+import scala.concurrent.ExecutionContext
+
 object HomeApi {
-  def route(actorRef: ActorRef)(implicit timeout: Timeout): Route = {
+  def route(actorRef: ActorRef)(implicit timeout: Timeout, ec: ExecutionContext): Route = {
     pathSingleSlash {
-      complete { (actorRef ? CmdHello).mapTo[HttpResponse] }
+      val fut = (actorRef ? CmdHello).mapTo[HttpResponse]
+      ApiUtils.completeFromFutureOr500(fut) { resp =>
+        complete(resp)
+      }
     }
   }
 }
-

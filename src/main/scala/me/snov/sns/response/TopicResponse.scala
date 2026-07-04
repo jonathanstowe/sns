@@ -2,12 +2,12 @@ package me.snov.sns.response
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.StatusCodes.OK
-import akka.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes.OK
+import org.apache.pekko.http.scaladsl.model.HttpResponse
 import me.snov.sns.model.Topic
 
 object TopicResponse extends XmlHttpResponse {
-  def delete = {
+  def delete: HttpResponse = {
     response(
       OK,
       <DeleteTopicResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">

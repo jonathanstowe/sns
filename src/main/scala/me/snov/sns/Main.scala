@@ -1,28 +1,25 @@
 package me.snov.sns
 
-import akka.actor.ActorSystem
-import akka.event.{Logging, LoggingAdapter}
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server._
-import akka.stream.ActorMaterializer
-import akka.util.Timeout
 import com.typesafe.config.ConfigFactory
 import me.snov.sns.actor._
 import me.snov.sns.api._
 import me.snov.sns.service.FileDbService
 import me.snov.sns.util.ToStrict
-
-import scala.concurrent.ExecutionContext
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.event.{Logging, LoggingAdapter}
+import org.apache.pekko.http.scaladsl.Http
+import org.apache.pekko.http.scaladsl.server.Directives._
+import org.apache.pekko.http.scaladsl.server._
+import org.apache.pekko.util.Timeout
 import scala.concurrent.duration._
-import scala.util.Properties
+import scala.concurrent.{Await, ExecutionContext}
+import scala.util.{Failure, Properties, Success}
 
 object Main extends App with ToStrict {
-  implicit val system = ActorSystem("sns")
+  implicit val system: ActorSystem = ActorSystem("sns")
   implicit val executor: ExecutionContext = system.dispatcher
-  implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val logger: LoggingAdapter = Logging(system, getClass)
-  implicit val timeout = new Timeout(1.second)
+  implicit val timeout: Timeout = new Timeout(1.second)
 
   val config = ConfigFactory.load()
   val dbService = new FileDbService(Properties.envOrElse("DB_PATH", config.getString("db.path")))
@@ -43,9 +40,19 @@ object Main extends App with ToStrict {
 
   logger.info("SNS v{} is starting", getClass.getPackage.getImplementationVersion)
 
-  Http().bindAndHandle(
-    handler = logRequestResult("akka-http-sns")(routes),
-    interface = Properties.envOrElse("HTTP_INTERFACE", config.getString("http.interface")),
-    port = Properties.envOrElse("HTTP_PORT", config.getString("http.port")).toInt
-  )
+  val bindingFuture = Http().newServerAt(
+    Properties.envOrElse("HTTP_INTERFACE", config.getString("http.interface")),
+    Properties.envOrElse("HTTP_PORT", config.getString("http.port")).toInt
+  ).bindFlow(logRequestResult("pekko-http-sns")(routes))
+
+  bindingFuture.onComplete {
+    case Success(binding) =>
+      logger.info(s"Server started at http://${binding.localAddress.toString}")
+
+    case Failure(ex) =>
+      logger.error(s"Server failed to start: ${ex.getMessage}")
+      ex.printStackTrace()
+      system.terminate()
+  }
+  Await.result(system.whenTerminated, Duration.Inf)
 }

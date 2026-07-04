@@ -5,7 +5,9 @@
         </encoder>
     </appender>
 
-    <logger name="org.apache.camel" level="INFO"/>
+    <logger name="org.apache.camel" level="DEBUG"/>
+	<logger name="me.snov.sns" level="DEBUG" /> 
+	<logger name="org.apache.pekko" level="DEBUG" />
 
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />

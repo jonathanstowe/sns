@@ -2,12 +2,12 @@ package me.snov.sns.response
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.StatusCodes.OK
-import akka.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes.OK
+import org.apache.pekko.http.scaladsl.model.HttpResponse
 import me.snov.sns.model.Subscription
 
 object SubscribeResponse extends XmlHttpResponse {
-  def subscribe(subscription: Subscription) = {
+  def subscribe(subscription: Subscription): HttpResponse = {
     response(
       OK,
       <SubscribeResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">
@@ -25,7 +25,7 @@ object SubscribeResponse extends XmlHttpResponse {
     )
   }
 
-  def unsubscribe = {
+  def unsubscribe: HttpResponse = {
     response(
       OK,
       <UnsubscribeResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/">
@@ -110,7 +110,7 @@ object SubscribeResponse extends XmlHttpResponse {
     )
   }
 
-  def setSubscriptionAttributes: HttpResponse = {
+  def setSubscriptionAttributes(): HttpResponse = {
     response(
       OK,
        <SetSubscriptionAttributesResponse
@@ -131,8 +131,8 @@ object SubscribeResponse extends XmlHttpResponse {
             {attrs.map( x =>
             <entry> 
               <key>{x._1}</key>
-              <value>{x._2}</value> 
-            </entry> 
+              <value>{x._2}</value>
+            </entry>
             )}
           </Attributes> 
         </GetSubscriptionAttributesResult>

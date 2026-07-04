@@ -2,8 +2,8 @@ package me.snov.sns.model
 
 import spray.json._
 
-case class Topic(val arn: String, val name: String)
+case class Topic(arn: String,name: String)
 
 object Topic extends DefaultJsonProtocol {
-  implicit val format = jsonFormat2(Topic.apply)
+  implicit val format: RootJsonFormat[Topic] = jsonFormat2(Topic.apply)
 }

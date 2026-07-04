@@ -1,6 +1,6 @@
 package me.snov.sns.response
 
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCode}
+import org.apache.pekko.http.scaladsl.model.{ContentTypes, HttpEntity, HttpResponse, StatusCode}
 
 import scala.xml.Elem
 

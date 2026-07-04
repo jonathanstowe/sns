@@ -12,13 +12,10 @@ case class Subscription(
                        ) {
 
   def isRawMessageDelivery: Boolean = {
-    subscriptionAttributes.getOrElse(Map.empty[String,String])
-      .get("RawMessageDelivery")
-      .map(java.lang.Boolean.parseBoolean(_))
-      .getOrElse(false)
+    subscriptionAttributes.getOrElse(Map.empty[String, String]).get("RawMessageDelivery").exists(java.lang.Boolean.parseBoolean)
   }
 }
 
 object Subscription extends DefaultJsonProtocol {
-  implicit val format = jsonFormat6(Subscription.apply)
+  implicit val format: RootJsonFormat[Subscription] = jsonFormat6(Subscription.apply)
 }

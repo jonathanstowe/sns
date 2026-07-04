@@ -1,10 +1,10 @@
 package me.snov.sns.actor
 
-import akka.actor.Status.{Failure, Success}
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.pattern.ask
-import akka.pattern.pipe
-import akka.util.Timeout
+import org.apache.pekko.actor.Status.{Failure, Success}
+import org.apache.pekko.actor.{Actor, ActorLogging, ActorRef, Props}
+import org.apache.pekko.pattern.ask
+import org.apache.pekko.pattern.pipe
+import org.apache.pekko.util.Timeout
 import me.snov.sns.actor.SubscribeActor.CmdFanOut
 import me.snov.sns.model.{Message, MessageAttribute}
 
@@ -20,8 +20,8 @@ object PublishActor {
 class PublishActor(subscribeActor: ActorRef) extends Actor with ActorLogging {
   import me.snov.sns.actor.PublishActor._
 
-  private implicit val timeout = Timeout(1.second)
-  private implicit val ec = context.dispatcher
+  private implicit val timeout: Timeout = Timeout(1.second)
+  private implicit val ec: scala.concurrent.ExecutionContextExecutor = context.dispatcher
 
   private def publish(topicArn: String, bodies: Map[String, String], messageAttributes: Map[String, MessageAttribute])(implicit ec: ExecutionContext) = {
     val message = Message(bodies, messageAttributes = messageAttributes)
@@ -32,7 +32,7 @@ class PublishActor(subscribeActor: ActorRef) extends Actor with ActorLogging {
     }
   }
 
-  override def receive = {
-    case CmdPublish(topicArn, bodies, attributes) => publish(topicArn, bodies, attributes) pipeTo sender
+  override def receive: Receive = {
+    case CmdPublish(topicArn, bodies, attributes) => publish(topicArn, bodies, attributes) pipeTo sender()
   }
 }

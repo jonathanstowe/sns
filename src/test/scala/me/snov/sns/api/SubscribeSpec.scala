@@ -2,18 +2,19 @@ package me.snov.sns.api
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.ActorRef
-import akka.http.scaladsl.model.{FormData, HttpResponse, StatusCodes}
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.testkit.{TestActor, TestProbe}
-import akka.util.Timeout
+import org.apache.pekko.actor.ActorRef
+import org.apache.pekko.http.scaladsl.model.{FormData, HttpResponse, StatusCodes}
+import org.apache.pekko.http.scaladsl.testkit.ScalatestRouteTest
+import org.apache.pekko.testkit.{TestActor, TestProbe}
+import org.apache.pekko.util.Timeout
 import me.snov.sns.actor.SubscribeActor.{CmdListSubscriptionsByTopic, CmdListSubscriptions, CmdSubscribe, CmdUnsubscribe, CmdSetSubscriptionAttributes,CmdGetSubscriptionAttributes}
 import me.snov.sns.model.Subscription
-import org.scalatest.{Matchers, WordSpec}
-import akka.actor.Status.Success
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import org.apache.pekko.actor.Status.Success
 
-class SubscribeSpec extends WordSpec with Matchers with ScalatestRouteTest {
-  implicit val timeout = new Timeout(100, TimeUnit.MILLISECONDS)
+class SubscribeSpec extends AnyWordSpec with Matchers with ScalatestRouteTest {
+  implicit val timeout: Timeout = new Timeout(100, TimeUnit.MILLISECONDS)
 
   val probe = TestProbe()
   val route = SubscribeApi.route(probe.ref)
@@ -109,7 +110,7 @@ class SubscribeSpec extends WordSpec with Matchers with ScalatestRouteTest {
   }
 
   "Set Attributes requires SubscriptionArn, Name, Value" in {
-     val params = Map("Action" -> "SetSubscriptionAttributes")
+    val params = Map("Action" -> "SetSubscriptionAttributes")
     Post("/", FormData(params)) ~> route ~> check {
       status shouldBe StatusCodes.BadRequest
     }
@@ -122,7 +123,7 @@ class SubscribeSpec extends WordSpec with Matchers with ScalatestRouteTest {
   }
 
   "Sends SetSubscriptionAttribute command" in {
-     val params = Map(
+    val params = Map(
       "Action" -> "SetSubscriptionAttributes",
       "SubscriptionArn" -> "foo",
       "AttributeName" -> "an",
@@ -139,17 +140,18 @@ class SubscribeSpec extends WordSpec with Matchers with ScalatestRouteTest {
       probe.expectMsg(CmdSetSubscriptionAttributes("foo", "an", "av"))
     }
   }
+
   "Get Attributes requires SubscriptionArn" in {
-     val params = Map("Action" -> "GetSubscriptionAttributes")
+    val params = Map("Action" -> "GetSubscriptionAttributes")
     Post("/", FormData(params)) ~> route ~> check {
       status shouldBe StatusCodes.BadRequest
     }
   }
 
   "Sends GetSubscriptionAttribute command" in {
-     val params = Map(
+    val params = Map(
       "Action" -> "GetSubscriptionAttributes",
-      "SubscriptionArn" -> "foo",
+      "SubscriptionArn" -> "foo"
     )
 
     probe.setAutoPilot(new TestActor.AutoPilot {

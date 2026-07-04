@@ -2,8 +2,8 @@ package me.snov.sns.response
 
 import java.util.UUID
 
-import akka.http.scaladsl.model.HttpResponse
-import akka.http.scaladsl.model.StatusCodes._
+import org.apache.pekko.http.scaladsl.model.HttpResponse
+import org.apache.pekko.http.scaladsl.model.StatusCodes._
 import me.snov.sns.model.Message
 
 object PublishResponse extends XmlHttpResponse {

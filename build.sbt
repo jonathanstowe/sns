@@ -1,42 +1,44 @@
 name := "sns"
 
-version := "0.4.1"
+version := "0.4.2"
 
-scalaVersion := "2.12.4"
+scalaVersion := "2.13.18"
 
 // sbt-assembly
-assemblyJarName in assembly := s"sns-${version.value}.jar"
-test in assembly := {}
+assembly / assemblyJarName  := s"sns-${version.value}.jar"
+assembly / test := {}
 
-val akkaVersion = "2.5.6"
-val akkaHttpVersion = "10.0.10"
-val camelVersion = "2.19.4"
-
-libraryDependencies ++= {
-  Seq(
-    "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-    "com.typesafe.akka" %% "akka-stream" % akkaVersion,
-
-    "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
-    "com.typesafe.akka" %% "akka-http-xml" % akkaHttpVersion,
-    "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-    "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion % Test,
-
-    "org.slf4j" % "slf4j-api" % "1.7.2",
-    "ch.qos.logback" % "logback-classic" % "1.0.7",
-    "com.typesafe.akka" %% "akka-camel" % akkaVersion,
-    "com.amazonaws" % "aws-java-sdk-sqs" % "1.11.228",
-    "org.apache.camel" % "camel-aws" % camelVersion
-      excludeAll ExclusionRule(organization = "com.amazonaws")
-    ,
-    "org.apache.camel" % "camel-http" % camelVersion,
-    "org.apache.camel" % "camel-rabbitmq" % camelVersion,
-    "org.apache.camel" % "camel-slack" % camelVersion
-      exclude("junit", "junit")
-    ,
-    "org.scalatest" %% "scalatest" % "3.0.4" % Test
-  )
+assembly / assemblyMergeStrategy  := {
+ case PathList("META-INF", _*) => MergeStrategy.discard
+ case "reference.conf"         => MergeStrategy.concat
+ case "application.conf"       => MergeStrategy.concat
+ case _                        => MergeStrategy.first
 }
 
-dependencyOverrides += "com.typesafe.akka" %% "akka-actor" % akkaVersion
-dependencyOverrides += "com.typesafe.akka" %% "akka-stream" % akkaVersion
+val pekkoVersion = "1.6.0"
+val pekkoHttpVersion = "1.3.0"
+val camelVersion = "4.21.0"
+
+libraryDependencies ++= {
+  //noinspection SbtDependencyVersionInspection
+  Seq(
+    "org.apache.pekko" %% "pekko-actor" % pekkoVersion,
+    "org.apache.pekko" %% "pekko-stream" % pekkoVersion,
+    "org.apache.pekko" %% "pekko-http" % pekkoHttpVersion,
+    "org.apache.pekko" %% "pekko-http-xml" % pekkoHttpVersion,
+    "org.apache.pekko" %% "pekko-http-spray-json" % pekkoHttpVersion,
+    "org.apache.pekko" %% "pekko-slf4j" % pekkoVersion,
+    "ch.qos.logback" % "logback-classic" % "1.3.15",
+    "com.amazonaws" % "aws-java-sdk-sqs" % "1.12.797",
+    ("org.apache.camel" % "camel-aws" % "2.25.4").excludeAll(ExclusionRule(organization = "com.amazonaws")),
+    "org.apache.camel" % "camel-http" % camelVersion,
+    "org.apache.camel" % "camel-rabbitmq" % "3.22.4",
+    "org.apache.camel" % "camel-slack" % camelVersion exclude("junit", "junit"),
+    "org.scalatest" %% "scalatest" % "3.2.20" % Test,
+    "org.apache.pekko" %% "pekko-http-testkit" % pekkoHttpVersion % Test,
+    "org.apache.pekko" %% "pekko-testkit" % pekkoVersion % Test
+    )
+}
+
+dependencyOverrides += "org.apache.pekko" %% "pekko-actor" % pekkoVersion
+dependencyOverrides += "org.apache.pekko" %% "pekko-stream" % pekkoVersion

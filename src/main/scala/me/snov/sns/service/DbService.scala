@@ -1,18 +1,20 @@
 package me.snov.sns.service
 
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Paths, StandardOpenOption}
-
-import akka.event.LoggingAdapter
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
+import org.apache.pekko.event.LoggingAdapter
 import me.snov.sns.model.{Configuration, Subscription, Topic}
 import spray.json._
+
+import scala.annotation.unused
 
 trait DbService {
   def load(): Option[Configuration]
 
-  def save(configuration: Configuration)
+  def save(configuration: Configuration): Unit
 }
 
+@unused
 class MemoryDbService extends DbService {
   override def load(): Option[Configuration] = {
     Some(Configuration(subscriptions= List[Subscription](), topics= List[Topic]()))
@@ -23,11 +25,13 @@ class MemoryDbService extends DbService {
 
 class FileDbService(dbFilePath: String)(implicit log: LoggingAdapter) extends DbService {
 
-  val subscriptionsName = "subscriptions"
-  val topicsName = "topics"
-  
-  val path = Paths.get(dbFilePath)
-  
+  @unused
+  val subscriptionsName: String = "subscriptions"
+  @unused
+  val topicsName: String = "topics"
+
+  val path: Path = Paths.get(dbFilePath)
+
   def load(): Option[Configuration] = {
     if (Files.exists(path)) {
       log.debug("Loading DB")
@@ -42,8 +46,8 @@ class FileDbService(dbFilePath: String)(implicit log: LoggingAdapter) extends Db
     }
     None
   }
-  
-  def save(configuration: Configuration) = {
+
+  def save(configuration: Configuration): Unit = {
     log.debug("Saving DB")
     write(configuration.toJson.prettyPrint)
   }
