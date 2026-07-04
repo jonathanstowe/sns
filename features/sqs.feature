@@ -5,7 +5,7 @@ Feature: SQS Integration
   Background:
     Given AWS SNS client
       And AWS SQS client
-      And I purge queue "http://localhost:9324?QueueName=queue1"
+	  And I purge queue "http://localhost:9324?queueName=http://localhost:9324/queue1"
 
   Scenario: Publish
     Given I create a new topic "test1"

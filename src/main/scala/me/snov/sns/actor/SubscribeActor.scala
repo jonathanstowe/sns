@@ -196,7 +196,9 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
       val res = delete(arn)
       log.debug(s"SubscribeActor: delete result $res")
       sender() ! res
-    case CmdListTopics => sender() ! topics.values
+    case CmdListTopics() =>
+      log.debug(s"SubscribeActor: received CmdListTopics from ${sender()}")
+      sender() ! topics.values
     case CmdSubscribe(topicArn, protocol, endpoint) => sender() ! subscribe(topicArn, protocol, endpoint)
     case CmdUnsubscribe(subscriptionArn) => sender() ! unsubscribe(subscriptionArn)
     case CmdListSubscriptionsByTopic(topicArn) => sender() ! listSubscriptionsByTopic(topicArn)

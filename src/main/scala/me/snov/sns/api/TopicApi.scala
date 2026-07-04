@@ -52,9 +52,10 @@ object TopicApi {
           }
 
         case "ListTopics" =>
-          val f = (actor ? CmdListTopics()).mapTo[Iterable[Topic]].map(TopicResponse.list)
+          val f = (actor ? CmdListTopics()).mapTo[Iterable[Topic]].map {
+            TopicResponse.list
+          }
           onSuccess(f) { resp => complete(resp) }
-
         case _ =>
           reject
           // complete(HttpResponse(400, entity = "Action is required (CreateTopic/DeleteTopic/ListTopics)"))

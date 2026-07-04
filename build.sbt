@@ -17,7 +17,7 @@ assembly / assemblyMergeStrategy  := {
 
 val pekkoVersion = "1.6.0"
 val pekkoHttpVersion = "1.3.0"
-val camelVersion = "4.21.0"
+val camelVersion = "3.14.8"
 
 libraryDependencies ++= {
   //noinspection SbtDependencyVersionInspection

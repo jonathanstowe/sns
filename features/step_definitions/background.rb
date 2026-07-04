@@ -1,8 +1,9 @@
+require 'nokogiri'
 require 'aws-sdk'
 require 'logger'
 
 Before do
-  @rand = Random::DEFAULT.rand(999999999999)
+  @rand = Random.rand(999999999999)
   @arns = {}
   @namedSubscriptionArns = {}
 end
