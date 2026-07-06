@@ -47,6 +47,7 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
     try {
       if (topics.isDefinedAt(topicArn) )  {
         if ( subscriptions.isDefinedAt(topicArn)) {
+          log.debug(s"Have subscriptions for ${topicArn}")
           subscriptions(topicArn).foreach((s: Subscription) => {
             if (actorPool.isDefinedAt(s.arn)) {
               log.debug(s"Sending message ${message.uuid} to ${s.endpoint}")
@@ -115,6 +116,7 @@ class SubscribeActor(dbActor: ActorRef) extends Actor with ActorLogging {
   }
 
   def subscribe(topicArn: TopicArn, protocol: String, endpoint: String): Subscription = {
+    log.debug(s"subscribing ${protocol} with endpoint ${endpoint} to ${topicArn}")
     val subscription = Subscription(s"$topicArn:${UUID.randomUUID}", "", topicArn, protocol, endpoint)
     initSubscription(subscription)
     

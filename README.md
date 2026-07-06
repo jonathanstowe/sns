@@ -1,8 +1,3 @@
-[![Build Status](https://travis-ci.org/s12v/sns.svg?branch=master)](https://travis-ci.org/s12v/sns)
-[![codecov](https://codecov.io/gh/s12v/sns/branch/master/graph/badge.svg)](https://codecov.io/gh/s12v/sns)
-[![Docker Pulls](https://img.shields.io/docker/pulls/s12v/sns.svg?maxAge=2592000)](https://hub.docker.com/r/s12v/sns/)
-
-
 # Fake SNS
 
 Fake Amazon Simple Notification Service (SNS) for testing. Supports:
@@ -87,7 +82,7 @@ docker run -d -p 9324:9324 s12v/elasticmq
 #### Ruby SDK tests:
 ```
 bundle install
-ENDPOINT=http://localhost:9911 bundle exec cucumber
+AWS_ACCESS_KEY_ID="xx" AWS_SECRET_ACCESS_KEY="xx" ENDPOINT=http://localhost:9911 bundle exec cucumber
 ```
 
 #### PHP SDK tests:

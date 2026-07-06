@@ -52,6 +52,9 @@ Given('AWS SNS client') do
   end
   
   $SNS = Aws::SNS::Client.new(config)
+  if ENV.has_key?('DEBUG_AWS')
+    $SNS.config.http_wire_trace = true
+  end
 end
 
 Given('AWS SQS client') do
@@ -61,4 +64,7 @@ Given('AWS SQS client') do
   }
 
   $SQS = Aws::SQS::Client.new(config)
+  if ENV.has_key?('DEBUG_AWS')
+    $SQS.config.http_wire_trace = true
+  end
 end

@@ -4,6 +4,8 @@ version := "0.4.2"
 
 scalaVersion := "2.13.18"
 
+scalacOptions ++= Seq("-deprecation", "-feature")
+
 // sbt-assembly
 assembly / assemblyJarName  := s"sns-${version.value}.jar"
 assembly / test := {}
